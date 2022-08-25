@@ -1,0 +1,37 @@
+[package]
+name = "tracing-axiom"
+version = "0.1.0"
+authors = ["Arne Bahlo <arne@axiom.co>"]
+edition = "2021"
+rust-version = "1.60"
+license = "MIT OR Apache-2.0"
+description = "The tracing layer for shipping traces to Axiom"
+homepage = "https://axiom.co"
+repository = "https://github.com/axiomhq/tracing-axiom"
+documentation = "https://docs.rs/tracing-axiom"
+keywords = ["tracing", "axiom", "instrumentation"]
+readme = "README.md"
+include = ["src/**/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
+resolver = "2"
+
+[dependencies]
+opentelemetry = { version =  "0.17", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.10", features = ["prost", "tokio", "http-proto"] }
+opentelemetry-http = { version = "0.6", features = ["reqwest"] }
+tracing-core = { version = "0.1", default-features = false, features = ["std"] }
+tracing-opentelemetry = { version = "0.17", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["smallvec", "std"] }
+reqwest = { version = "0.11", default-features = false }
+thiserror = "1"
+url = "2"
+lazy_static = "1"
+
+[dev-dependencies]
+tokio = "1"
+tracing = "0.1"
+
+[features]
+default = ["default-tls"]
+default-tls = ["reqwest/default-tls"]
+native-tls = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-tls"]

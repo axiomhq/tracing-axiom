@@ -1,0 +1,11 @@
+[package]
+name = "fmt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = "1"
+tracing = "0.1"
+tracing-axiom = { path = "../../" }
+tracing-subscriber = "0.3"
+
