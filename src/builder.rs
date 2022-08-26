@@ -96,8 +96,7 @@ impl Builder {
         Ok((layer, Guard {}))
     }
 
-    /// Create a tracer which sends traces to Axiom.
-    pub fn tracer(self) -> Result<Tracer, Error> {
+    fn tracer(self) -> Result<Tracer, Error> {
         let token = self
             .token
             .ok_or(Error::MissingToken)
