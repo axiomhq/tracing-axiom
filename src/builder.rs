@@ -16,6 +16,16 @@ use url::Url;
 
 use crate::{Error, CLOUD_URL};
 
+/// The guard will shutdown the OTEL tracer provider on drop.
+#[must_use]
+pub struct Guard;
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        opentelemetry::global::shutdown_tracer_provider();
+    }
+}
+
 /// Builder for creating a tracer, a layer or a subscriber that sends traces to
 /// Axiom.
 /// The token and the url are derived from the `AXIOM_TOKEN` and `AXIOM_URL`
@@ -62,16 +72,16 @@ impl Builder {
     /// Initialize the global subscriber. This panics if the initialization was
     /// unsuccessful, likely because a global subscriber was already installed or
     /// `AXIOM_TOKEN` is not set or invalid.
-    pub fn init(self) {
+    pub fn init(self) -> Guard {
         self.try_init().unwrap()
     }
 
     /// Initialize the global subscriber. This returns an error if the
     /// initialization was unsuccessful, likely because a global subscriber was
     /// already installed or `AXIOM_TOKEN` is not set or invalid.
-    pub fn try_init(self) -> Result<(), Error> {
+    pub fn try_init(self) -> Result<Guard, Error> {
         Registry::default().with(self.layer()?).try_init()?;
-        Ok(())
+        Ok(Guard {})
     }
 
     /// Create a layer which sends traces to Axiom.
