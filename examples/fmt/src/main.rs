@@ -3,7 +3,7 @@ use tracing_subscriber::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let axiom_layer = tracing_axiom::builder().with_service_name("fmt").layer()?;
+    let (axiom_layer, _guard) = tracing_axiom::builder().with_service_name("fmt").layer()?;
     let fmt_layer = tracing_subscriber::fmt::layer().pretty();
     tracing_subscriber::registry()
         .with(fmt_layer)
@@ -12,7 +12,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     say_hello();
 
-    tracing_axiom::shutdown();
     Ok(())
 }
 

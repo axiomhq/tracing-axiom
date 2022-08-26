@@ -24,9 +24,8 @@ and shut down the exporter like this:
 ```rust
 #[tokio::main]
 async fn main() {
-    tracing_axiom::init(); // or try_init() to handle errors
+    let _guard = tracing_axiom::init(); // or try_init() to handle errors
     say_hello();
-    tracing_axiom::shutdown();
 }
 
 #[tracing::instrument]
@@ -50,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let trace_config = trace::Config::default()
     .with_max_events_per_span(42);
 
-  tracing_axiom::builder()
+  let _guard = tracing_axiom::builder()
     .with_token("xaat-123456789")
     .with_url("https://my-axiom.example.org")
     .with_service_name("my-service")

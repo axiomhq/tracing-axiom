@@ -9,9 +9,8 @@
 //! ```
 //! #[tokio::main]
 //! async fn main() {
-//!     tracing_axiom::init();
+//!     let _guard = tracing_axiom::init();
 //!     say_hello();
-//!     tracing_axiom::shutdown();
 //! }
 //!
 //! #[tracing::instrument]
@@ -30,7 +29,7 @@ use url::Url;
 mod builder;
 mod error;
 
-pub use builder::Builder;
+pub use builder::{Builder, Guard};
 pub use error::Error;
 
 #[cfg(doctest)]
@@ -52,7 +51,7 @@ lazy_static! {
 /// Panics if the initialization was unsuccessful, likely because a global
 /// subscriber was already installed or `AXIOM_TOKEN` is not set or invalid.
 /// If you want to handle the error instead, use [`try_init`].
-pub fn init() {
+pub fn init() -> Guard {
     Builder::new().init()
 }
 
@@ -67,16 +66,11 @@ pub fn init() {
 /// Returns an error if the initialization was unsuccessful, likely because a
 /// global subscriber was already installed or `AXIOM_TOKEN` is not set or
 /// invalid.
-pub fn try_init() -> Result<(), Error> {
+pub fn try_init() -> Result<Guard, Error> {
     Builder::new().try_init()
 }
 
 /// Create a new [`Builder`].
 pub fn builder() -> Builder {
     Builder::new()
-}
-
-/// Shutdown the tracer prodiver, flushing all spans. Run this before exit.
-pub fn shutdown() {
-    opentelemetry::global::shutdown_tracer_provider();
 }
