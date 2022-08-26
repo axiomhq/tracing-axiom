@@ -74,11 +74,3 @@ pub fn try_init() -> Result<Guard, Error> {
 pub fn builder() -> Builder {
     Builder::new()
 }
-
-/// Shutdown the tracer prodiver, flushing all spans.
-/// Calling this before exit is only necessary for advanced configurations,
-/// [`init`] and [`try_init`] as well as respective methods on the [`Builder`]
-/// will return a [`Guard`] which will do this for you.
-pub fn shutdown() {
-    opentelemetry::global::shutdown_tracer_provider();
-}
