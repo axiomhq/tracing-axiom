@@ -14,7 +14,9 @@ use tracing_subscriber::{
 };
 use url::Url;
 
-use crate::{Error, CLOUD_URL};
+use crate::Error;
+
+const CLOUD_URL: &str = "https://cloud.axiom.co";
 
 /// The guard will shutdown the OTEL tracer provider on drop.
 #[must_use]
@@ -107,13 +109,20 @@ impl Builder {
             return Err(Error::InvalidToken);
         }
 
-        let url = self
-            .url
-            .or_else(|| env::var("AXIOM_URL").ok())
-            .map(|url| Url::parse(&url).map_err(Error::InvalidUrl))
-            .transpose()?
-            .unwrap_or_else(|| CLOUD_URL.clone())
-            .join("/api/v1/traces")?;
+        let url =
+            self.url
+                .or_else(|| {
+                    env::var("AXIOM_URL").ok().and_then(|url| {
+                        if !url.is_empty() {
+                            Some(url)
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .unwrap_or_else(|| CLOUD_URL.to_string())
+                .parse::<Url>()?
+                .join("/api/v1/traces")?;
 
         let mut headers = HashMap::with_capacity(2);
         headers.insert("Authorization".to_string(), format!("Bearer {}", token));
