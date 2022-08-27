@@ -19,7 +19,7 @@ tracing-axiom = "0.2"
 ## Quickstart
 
 Expose an API token with ingest permission under `AXIOM_TOKEN` and initialize
-and shut down the exporter like this:
+the exporter like this:
 
 ```rust
 #[tokio::main]
@@ -87,7 +87,7 @@ that can be enabled or disabled:
 
 Licensed under either of
 
-- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or [apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or [opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
 
 at your option.
