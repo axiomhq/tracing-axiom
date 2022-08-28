@@ -18,7 +18,7 @@ use crate::Error;
 
 const CLOUD_URL: &str = "https://cloud.axiom.co";
 
-/// The guard will shutdown the OTEL tracer provider on drop.
+/// The guard will shutdown the tracer provider on drop.
 #[must_use]
 pub struct Guard;
 
