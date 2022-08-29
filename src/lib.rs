@@ -23,9 +23,6 @@
 //! panics if setup fails. If you want to handle the error, use [`try_init`].
 //! For more advanced configuration, see [`builder()`].
 
-use lazy_static::lazy_static;
-use url::Url;
-
 mod builder;
 mod error;
 
@@ -35,10 +32,6 @@ pub use error::Error;
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 pub struct ReadmeDoctests;
-
-lazy_static! {
-    pub(crate) static ref CLOUD_URL: Url = Url::parse("https://cloud.axiom.co").unwrap();
-}
 
 /// Initialize a global subscriber which sends traces to Axiom.
 ///

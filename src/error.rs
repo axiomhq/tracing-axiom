@@ -1,12 +1,9 @@
 use opentelemetry::trace;
-use std::env;
 use tracing_subscriber::util::TryInitError;
 
 /// The error type for this crate.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Failed to look up AXIOM_TOKEN env: {0}")]
-    InvalidTokenEnv(#[from] env::VarError),
     #[error("Failed to configure tracer: {0}")]
     TraceError(#[from] trace::TraceError),
     #[error("Failed to initialize registry: {0}")]
