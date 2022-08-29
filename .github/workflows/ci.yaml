@@ -67,7 +67,8 @@ jobs:
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         env:
-          AXIOM_TOKEN: xaat-123456789
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_URL: https://cloud.dev.axiomtestlabs.co
         with:
           command: test
   publish_on_crates_io:

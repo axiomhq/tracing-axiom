@@ -6,6 +6,9 @@ use opentelemetry::{
     KeyValue,
 };
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_semantic_conventions::resource::{
+    SERVICE_NAME, TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_NAME, TELEMETRY_SDK_VERSION,
+};
 use std::{collections::HashMap, env, time::Duration};
 use tracing_core::Subscriber;
 use tracing_opentelemetry::OpenTelemetryLayer;
@@ -138,10 +141,15 @@ impl Builder {
         let mut trace_config = self.trace_config.unwrap_or_default();
         if let Some(service_name) = self.service_name {
             trace_config = trace_config.with_resource(Resource::new(vec![KeyValue::new(
-                "service.name",
-                service_name, // can we be smarter about this?
+                SERVICE_NAME,
+                service_name, // TODO: Is there a way to get the name of the bin crate using this?
             )]));
         }
+        trace_config = trace_config.with_resource(Resource::new(vec![
+            KeyValue::new(TELEMETRY_SDK_NAME, "tracing-axiom".to_string()),
+            KeyValue::new(TELEMETRY_SDK_VERSION, env!("CARGO_PKG_VERSION").to_string()),
+            KeyValue::new(TELEMETRY_SDK_LANGUAGE, "rust".to_string()),
+        ]));
 
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()

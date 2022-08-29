@@ -24,11 +24,14 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["s
 reqwest = { version = "0.11", default-features = false }
 thiserror = "1"
 url = "2"
+opentelemetry-semantic-conventions = "0.9"
 
 [dev-dependencies]
 tokio = "1"
 tracing = "0.1"
 opentelemetry = { version =  "0.17", features = ["rt-tokio"] }
+axiom-rs = "0.3"
+uuid = { version = "1", features = ["v4"] }
 
 [features]
 default = ["default-tls"]
