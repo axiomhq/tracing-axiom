@@ -19,7 +19,8 @@ use crate::Error;
 const CLOUD_URL: &str = "https://cloud.axiom.co";
 
 /// The guard will shutdown the tracer provider on drop.
-#[must_use]
+#[must_use = "dropping the guard will shut down the tracer provider"]
+#[derive(Debug)]
 pub struct Guard;
 
 impl Drop for Guard {
@@ -38,6 +39,7 @@ pub struct Builder {
     url: Option<String>,
     trace_config: Option<TraceConfig>,
     service_name: Option<String>,
+    no_env: bool,
 }
 
 impl Builder {
@@ -71,6 +73,12 @@ impl Builder {
         self
     }
 
+    /// Don't fall back to environment variables.
+    pub fn no_env(mut self) -> Self {
+        self.no_env = true;
+        self
+    }
+
     /// Initialize the global subscriber. This panics if the initialization was
     /// unsuccessful, likely because a global subscriber was already installed or
     /// `AXIOM_TOKEN` is not set or invalid.
@@ -99,30 +107,26 @@ impl Builder {
     }
 
     fn tracer(self) -> Result<Tracer, Error> {
-        let token = self
-            .token
-            .ok_or(Error::MissingToken)
-            .or_else(|_| env::var("AXIOM_TOKEN"))?;
+        let mut token = self.token;
+        if !self.no_env {
+            token = token.or_else(|| env::var("AXIOM_TOKEN").ok());
+        }
+        let token = token.ok_or(Error::MissingToken)?;
         if token.is_empty() {
             return Err(Error::EmptyToken);
         } else if !token.starts_with("xaat-") {
             return Err(Error::InvalidToken);
         }
 
-        let url =
-            self.url
-                .or_else(|| {
-                    env::var("AXIOM_URL").ok().and_then(|url| {
-                        if !url.is_empty() {
-                            Some(url)
-                        } else {
-                            None
-                        }
-                    })
-                })
-                .unwrap_or_else(|| CLOUD_URL.to_string())
-                .parse::<Url>()?
-                .join("/api/v1/traces")?;
+        let mut url = self.url;
+        if !self.no_env {
+            url = url.or_else(|| env::var("AXIOM_URL").ok());
+        }
+        let url = url
+            .and_then(|url| if !url.is_empty() { Some(url) } else { None })
+            .unwrap_or_else(|| CLOUD_URL.to_string())
+            .parse::<Url>()?
+            .join("/api/v1/traces")?;
 
         let mut headers = HashMap::with_capacity(2);
         headers.insert("Authorization".to_string(), format!("Bearer {}", token));
@@ -152,5 +156,75 @@ impl Builder {
             .with_trace_config(trace_config)
             .install_batch(opentelemetry::runtime::Tokio)?;
         Ok(tracer)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_missing_token() {
+        match Builder::new().no_env().try_init() {
+            Err(Error::MissingToken) => {}
+            result => panic!("expected MissingToken, got {:?}", result),
+        };
+    }
+
+    #[test]
+    fn test_empty_token() {
+        match Builder::new().no_env().with_token("").try_init() {
+            Err(Error::EmptyToken) => {}
+            result => panic!("expected EmptyToken, got {:?}", result),
+        };
+    }
+
+    #[test]
+    fn test_invalid_token() {
+        match Builder::new().no_env().with_token("invalid").try_init() {
+            Err(Error::InvalidToken) => {}
+            result => panic!("expected InvalidToken, got {:?}", result),
+        };
+    }
+
+    #[test]
+    fn test_invalid_url() {
+        match Builder::new()
+            .no_env()
+            .with_token("xaat-123456789")
+            .with_url("<invalid>")
+            .try_init()
+        {
+            Err(Error::InvalidUrl(_)) => {}
+            result => panic!("expected InvalidUrl, got {:?}", result),
+        };
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_valid_token() {
+        // Note that we can't test the init/try_init funcs here because OTEL
+        // gets confused with the global subscriber.
+
+        let result: Result<(OpenTelemetryLayer<Registry, Tracer>, Guard), Error> =
+            Builder::new().with_token("xaat-123456789").layer();
+        assert!(result.is_ok(), "{:?}", result.err());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_valid_token_env() {
+        // Note that we can't test the init/try_init funcs here because OTEL
+        // gets confused with the global subscriber.
+
+        let env_backup = env::var("AXIOM_TOKEN");
+        env::set_var("AXIOM_TOKEN", "xaat-1234567890");
+
+        let result: Result<(OpenTelemetryLayer<Registry, Tracer>, Guard), Error> =
+            Builder::new().layer();
+
+        if let Ok(token) = env_backup {
+            env::set_var("AXIOM_TOKEN", token);
+        }
+
+        assert!(result.is_ok(), "{:?}", result.err());
     }
 }

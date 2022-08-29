@@ -84,6 +84,12 @@ that can be enabled or disabled:
 - **rustls-tls**: Enables TLS functionality provided by `rustls`.
 
 ## FAQ & Troubleshooting
+### How do I log traces to the console in addition to Axiom?
+You can use this library to get a [`tracing-subscriber::layer`](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/layer/index.html) 
+and combine it with other layers, for example one that prints traces to the 
+console.
+You can see how this works in the [fmt example](./examples/fmt).
+
 ### Logs are not appearing in Axiom
 [`init`](https://docs.rs/tracing-axiom/latest/tracing_axiom/fn.init.html), [`try_init`](https://docs.rs/tracing-axiom/latest/tracing_axiom/fn.try_init.html) and [`layer`](https://docs.rs/tracing-axiom/latest/tracing_axiom/struct.Builder.html#method.layer) all return a [`Guard`](https://docs.rs/tracing-axiom/latest/tracing_axiom/struct.Guard.html), which will shutdown the 
 tracer provider on drop.
@@ -91,10 +97,11 @@ Logs won't be sent to Axiom if the `Guard` is dropped prematurely.
 If you have a function that sets up observability, return the `Guard` up to the
 main func to prevent it from being dropped.
 
-### How do I log traces to the console and to Axiom?
-You can use this library to get a [`tracing-subscriber::layer`](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/layer/index.html) and combine it with other layers,
-for example one that prints traces to the console.
-You can see how this works in the [fmt example](./examples/fmt).
+### My test function hangs indefinitely
+This can happen when you use `#[tokio::test]` as that defaults to a 
+single-threaded executor, but the 
+[`opentelemetry`](https://docs.rs/opentelemetry) crate requires a multi-thread
+executor.
 
 ## License
 

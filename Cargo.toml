@@ -28,6 +28,7 @@ url = "2"
 [dev-dependencies]
 tokio = "1"
 tracing = "0.1"
+opentelemetry = { version =  "0.17", features = ["rt-tokio"] }
 
 [features]
 default = ["default-tls"]
