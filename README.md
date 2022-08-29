@@ -13,7 +13,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tracing-axiom = "0.2"
+tracing-axiom = "0.3"
 ```
 
 ## Quickstart
