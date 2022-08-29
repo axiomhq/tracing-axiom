@@ -29,6 +29,8 @@ url = "2"
 tokio = "1"
 tracing = "0.1"
 opentelemetry = { version =  "0.17", features = ["rt-tokio"] }
+axiom-rs = "0.3"
+uuid = { version = "1", features = ["v4"] }
 
 [features]
 default = ["default-tls"]
