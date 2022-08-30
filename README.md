@@ -50,6 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .with_max_events_per_span(42);
 
   let _guard = tracing_axiom::builder()
+    .no_env()
     .with_token("xaat-123456789")
     .with_url("https://my-axiom.example.org")
     .with_service_name("my-service")
