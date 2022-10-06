@@ -1,30 +1,42 @@
-# tracing-axiom
+![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-dark.svg#gh-dark-mode-only)
+![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-light.svg#gh-light-mode-only)
 
-[![CI](https://github.com/axiomhq/tracing-axiom/workflows/CI/badge.svg)](https://github.com/axiomhq/tracing-axiom/actions?query=workflow%3ACI)
-[![crates.io](https://img.shields.io/crates/v/tracing-axiom.svg)](https://crates.io/crates/tracing-axiom)
+<div align="center">
+
 [![docs.rs](https://docs.rs/tracing-axiom/badge.svg)](https://docs.rs/tracing-axiom/)
+[![build](https://img.shields.io/github/workflow/status/axiomhq/tracing-axiom/CI?ghcache=unused)](https://github.com/axiomhq/tracing-axiom/actions?query=workflow%3ACI)
+[![crates.io](https://img.shields.io/crates/v/tracing-axiom.svg)](https://crates.io/crates/tracing-axiom)
 [![License](https://img.shields.io/crates/l/tracing-axiom)](LICENSE-APACHE)
 
-The tracing layer for shipping traces to Axiom.
+</div>
 
-## Install
+[Axiom](https://axiom.co) unlocks observability at any scale.
 
-Add the following to your `Cargo.toml`:
+- **Ingest with ease, store without limits:** Axiom’s next-generation datastore enables ingesting petabytes of data with ultimate efficiency. Ship logs from Kubernetes, AWS, Azure, Google Cloud, DigitalOcean, Nomad, and others.
+- **Query everything, all the time:** Whether DevOps, SecOps, or EverythingOps, query all your data no matter its age. No provisioning, no moving data from cold/archive to “hot”, and no worrying about slow queries. All your data, all. the. time.
+- **Powerful dashboards, for continuous observability:** Build dashboards to collect related queries and present information that’s quick and easy to digest for you and your team. Dashboards can be kept private or shared with others, and are the perfect way to bring together data from different sources
+
+For more information check out the [official documentation](https://axiom.co/docs).
+
+## Usage
+
+Add the following to your Cargo.toml:
 
 ```toml
 [dependencies]
 tracing-axiom = "0.3"
 ```
 
-## Quickstart
+If you use the [Axiom CLI](https://github.com/axiomhq/cli), run `eval $(axiom config export -f)` to configure your environment variables.
 
-Expose an API token with ingest permission under `AXIOM_TOKEN` and initialize
-the exporter like this:
+Otherwise create an API token in [the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as `AXIOM_TOKEN`.
+
+Set up tracing in one line like this:
 
 ```rust
 #[tokio::main]
 async fn main() {
-    let _guard = tracing_axiom::init(); // or try_init() to handle errors
+    let _guard = tracing_axiom::init(); // or try_init() if you want to handle errors
     say_hello();
 }
 
@@ -34,44 +46,10 @@ pub fn say_hello() {
 }
 ```
 
+For further examples, head over to the [examples](examples) directory.
+
 > **Note**: Due to a limitation of an underlying library, [events outside of a 
 > span are not recorded](https://docs.rs/tracing-opentelemetry/0.17.4/src/tracing_opentelemetry/layer.rs.html#807).
-
-## Kitchen Sink Full Configuration
-
-Here's a full configuration:
-
-```rust
-use opentelemetry::sdk::trace;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-  let trace_config = trace::Config::default()
-    .with_max_events_per_span(42);
-
-  let _guard = tracing_axiom::builder()
-    .no_env()
-    .with_token("xaat-123456789")
-    .with_url("https://my-axiom.example.org")
-    .with_service_name("my-service")
-    .with_trace_config(trace_config)
-    .try_init()?;
-  Ok(())
-}
-```
-
-If you want to use other layers next to Axiom in your tracing configuration, 
-check out the [fmt example](./examples/fmt).
-
-## Under The Hood
-
-This library uses [OpenTelemetry](https://opentelemetry.io) to send data to
-Axiom.
-You can set this up yourself if you want to, but make sure to use the OTLP 
-format with the http transport and set the endpoint to
-`https://cloud.axiom.co/api/v1/traces`.
-A good entrypoint is the
-[`opentelemetry-otlp`](https://docs.rs/opentelemetry-otlp) crate.
 
 ## Features
 
