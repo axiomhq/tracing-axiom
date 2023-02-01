@@ -1,3 +1,9 @@
+# :warning: EXPERIMENTAL :warning:
+
+This is still experimental. Traces are ingested raw into Axiom and there's no nice way to view them (yet). 
+
+----
+
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-dark.svg#gh-dark-mode-only)
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-light.svg#gh-light-mode-only)
 
@@ -29,7 +35,8 @@ tracing-axiom = "0.3"
 
 If you use the [Axiom CLI](https://github.com/axiomhq/cli), run `eval $(axiom config export -f)` to configure your environment variables.
 
-Otherwise create an API token in [the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as `AXIOM_TOKEN`.
+Otherwise create an API token in [the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as `AXIOM_TOKEN`. 
+The token needs to have ingest permission to all datasets, using it will automatically create a `_traces` dataset for you.
 
 Set up tracing in one line like this:
 
