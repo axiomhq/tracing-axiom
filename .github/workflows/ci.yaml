@@ -69,6 +69,7 @@ jobs:
         env:
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_URL: https://cloud.dev.axiomtestlabs.co
+          AXIOM_DATASET: _traces
         with:
           command: test
   publish_on_crates_io:
