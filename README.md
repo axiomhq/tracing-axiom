@@ -33,12 +33,12 @@ Add the following to your Cargo.toml:
 tracing-axiom = "0.3"
 ```
 
-If you use the [Axiom CLI](https://github.com/axiomhq/cli), run `eval $(axiom config export -f)` to configure your environment variables.
+Create a dataset in Axiom and export the name as `AXIOM_DATASET`.
+Then create an API token with ingest permission into that dataset in
+[the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as
+`AXIOM_TOKEN`.
 
-Otherwise create an API token in [the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as `AXIOM_TOKEN`. 
-The token needs to have ingest permission to all datasets, using it will automatically create a `_traces` dataset for you.
-
-Set up tracing in one line like this:
+Now you can set up tracing in one line like this:
 
 ```rust
 #[tokio::main]

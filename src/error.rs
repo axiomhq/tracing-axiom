@@ -14,6 +14,10 @@ pub enum Error {
     EmptyToken,
     #[error("Invalid token (please provide a personal token)")]
     InvalidToken,
+    #[error("Dataset name is missing")]
+    MissingDatasetName,
+    #[error("Dataset name is empty")]
+    EmptyDatasetName,
     #[error("Invalid URL: {0}")]
     InvalidUrl(#[from] url::ParseError),
 }
