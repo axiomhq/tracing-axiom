@@ -30,7 +30,7 @@ Add the following to your Cargo.toml:
 
 ```toml
 [dependencies]
-tracing-axiom = "0.3"
+tracing-axiom = "0.4"
 ```
 
 Create a dataset in Axiom and export the name as `AXIOM_DATASET`.
