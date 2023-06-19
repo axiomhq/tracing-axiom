@@ -38,6 +38,7 @@ impl Drop for Guard {
 /// environment variables.
 #[derive(Debug, Default)]
 pub struct Builder {
+    dataset_name: Option<String>,
     token: Option<String>,
     url: Option<String>,
     trace_config: Option<TraceConfig>,
@@ -49,6 +50,11 @@ impl Builder {
     /// Create a new Builder.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_dataset(mut self, dataset_name: impl Into<String>) -> Self {
+        self.dataset_name = Some(dataset_name.into());
+        self
     }
 
     /// Set the Axiom API token to use.
@@ -121,6 +127,15 @@ impl Builder {
             return Err(Error::InvalidToken);
         }
 
+        let mut dataset_name = self.dataset_name;
+        if !self.no_env {
+            dataset_name = dataset_name.or_else(|| env::var("AXIOM_DATASET").ok());
+        }
+        let dataset_name = dataset_name.ok_or(Error::MissingDatasetName)?;
+        if dataset_name.is_empty() {
+            return Err(Error::EmptyDatasetName);
+        }
+
         let mut url = self.url;
         if !self.no_env {
             url = url.or_else(|| env::var("AXIOM_URL").ok());
@@ -133,6 +148,7 @@ impl Builder {
 
         let mut headers = HashMap::with_capacity(2);
         headers.insert("Authorization".to_string(), format!("Bearer {}", token));
+        headers.insert("X-Axiom-Dataset".to_string(), dataset_name);
         headers.insert(
             "User-Agent".to_string(),
             format!("tracing-axiom/{}", env!("CARGO_PKG_VERSION")),
@@ -200,6 +216,7 @@ mod tests {
         match Builder::new()
             .no_env()
             .with_token("xaat-123456789")
+            .with_dataset("test")
             .with_url("<invalid>")
             .try_init()
         {
@@ -213,8 +230,10 @@ mod tests {
         // Note that we can't test the init/try_init funcs here because OTEL
         // gets confused with the global subscriber.
 
-        let result: Result<(OpenTelemetryLayer<Registry, Tracer>, Guard), Error> =
-            Builder::new().with_token("xaat-123456789").layer();
+        let result: Result<(OpenTelemetryLayer<Registry, Tracer>, Guard), Error> = Builder::new()
+            .with_dataset("test")
+            .with_token("xaat-123456789")
+            .layer();
         assert!(result.is_ok(), "{:?}", result.err());
     }
 
@@ -227,7 +246,7 @@ mod tests {
         env::set_var("AXIOM_TOKEN", "xaat-1234567890");
 
         let result: Result<(OpenTelemetryLayer<Registry, Tracer>, Guard), Error> =
-            Builder::new().layer();
+            Builder::new().with_dataset("test").layer();
 
         if let Ok(token) = env_backup {
             env::set_var("AXIOM_TOKEN", token);
