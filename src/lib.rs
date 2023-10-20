@@ -17,12 +17,12 @@
 //! [tracing](https://docs.rs/tracing) run `cargo add tracing-axiom` and
 //! configure it like this:
 //!
-//! ```
+//! ```rust,no_run
 //! #[tokio::main]
-//! async fn main() -> Result<(), crate::error::Error> {
-//!     tracing_axiom::init()?;
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     tracing_axiom::init()?; // Set AXIOM_DATASET and AXIOM_TOKEN in your env!
 //!     say_hello();
-//!      Ok(())
+//!     Ok(())
 //! }
 //!
 //! #[tracing::instrument]

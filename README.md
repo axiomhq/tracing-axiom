@@ -40,11 +40,12 @@ Then create an API token with ingest permission into that dataset in
 
 Now you can set up tracing in one line like this:
 
-```rust
+```rust,no_run
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_axiom::init()?;
     say_hello();
+    Ok(())
 }
 
 #[tracing::instrument]
