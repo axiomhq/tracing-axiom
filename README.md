@@ -42,8 +42,8 @@ Now you can set up tracing in one line like this:
 
 ```rust
 #[tokio::main]
-async fn main() {
-    let _guard = tracing_axiom::init(); // or try_init() if you want to handle errors
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_axiom::init()?;
     say_hello();
 }
 

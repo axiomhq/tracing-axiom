@@ -1,5 +1,5 @@
 [package]
-name = "simple"
+name = "noenv"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,5 @@ edition = "2021"
 tokio = "1"
 tracing = "0.1"
 tracing-axiom = { path = "../../" }
-
+axiom-rs = "0.3"
+uuid = { version = "1", features = ["v4"] }
