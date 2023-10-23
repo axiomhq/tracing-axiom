@@ -14,12 +14,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_dataset("tracing-axiom-examples".to_string()) // Set dataset
         .with_token("xaat-some-valid-token") // Set API token
         .with_url("Some valid URL other than default") // Set URL
-        .try_init()?; // Initialize tracing
+        .init()?; // Initialize tracing
 
     let uuid = Uuid::new_v4();
     say_hi(uuid, "world");
 
-    let query = format!(r#"['{dataset}'] | where name == "say_hi""#,);
+    let query = r#"['tracing-axiom-examples'] | where name == "say_hi""#.to_string();
 
     let client = Client::new()?;
     let _result = client.datasets.apl_query(query, None).await?;

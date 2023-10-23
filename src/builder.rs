@@ -17,13 +17,73 @@ use std::{
 use tracing_core::Subscriber;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{
-    layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, Registry,
+    layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, Layer, Registry,
 };
 
 use crate::Error;
 use reqwest::Url;
 
 const CLOUD_URL: &str = "https://cloud.axiom.co";
+
+/// A layer that sends traces to Axiom via the `OpenTelemetry` protocol.
+/// The layer cleans up the OpenTelemetry global tracer provider on drop.
+pub struct AxiomOpenTelemetryLayer<S>
+where
+    S: Subscriber + for<'span> LookupSpan<'span>,
+    Self: 'static,
+{
+    pub(crate) inner: OpenTelemetryLayer<S, Tracer>,
+}
+
+impl<S> AxiomOpenTelemetryLayer<S>
+where
+    S: Subscriber + for<'span> LookupSpan<'span>,
+    Self: 'static,
+{
+    fn with_inner(layer: OpenTelemetryLayer<S, Tracer>) -> Self {
+        Self { inner: layer }
+    }
+}
+
+impl<S> Drop for AxiomOpenTelemetryLayer<S>
+where
+    S: Subscriber + for<'span> LookupSpan<'span>,
+    Self: 'static,
+{
+    fn drop(&mut self) {
+        opentelemetry::global::shutdown_tracer_provider();
+    }
+}
+
+impl<S> Layer<S> for AxiomOpenTelemetryLayer<S>
+where
+    S: Subscriber + for<'span> LookupSpan<'span>,
+    Self: 'static,
+{
+    fn on_enter(
+        &self,
+        id: &tracing_core::span::Id,
+        ctx: tracing_subscriber::layer::Context<'_, S>,
+    ) {
+        self.inner.on_enter(id, ctx);
+    }
+
+    fn on_exit(&self, id: &tracing_core::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
+        self.inner.on_exit(id, ctx);
+    }
+
+    fn on_close(&self, id: tracing_core::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
+        self.inner.on_close(id, ctx);
+    }
+
+    fn on_event(
+        &self,
+        event: &tracing_core::Event<'_>,
+        ctx: tracing_subscriber::layer::Context<'_, S>,
+    ) {
+        self.inner.on_event(event, ctx);
+    }
+}
 
 /// Builder for creating a tracing tracer, a layer or a subscriber that sends traces to
 /// Axiom via the `OpenTelemetry` protocol. The API token is read from the `AXIOM_TOKEN`
@@ -164,19 +224,6 @@ impl Builder {
     /// invalid.
     ///
     pub fn init(self) -> Result<(), Error> {
-        self.try_init()
-    }
-
-    /// Initialize the global subscriber. This returns an error if the
-    /// initialization was unsuccessful, likely because a global subscriber was
-    /// already installed or `AXIOM_TOKEN` is not set or invalid.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the initialization was unsuccessful, likely because
-    /// a global subscriber was already installed or `AXIOM_TOKEN` is not set or
-    /// invalid.
-    pub fn try_init(self) -> Result<(), Error> {
         let layer = self.layer()?;
         Registry::default().with(layer).try_init()?;
         Ok(())
@@ -191,12 +238,13 @@ impl Builder {
     /// a global subscriber was already installed or `AXIOM_TOKEN` is not set or
     /// invalid.
     ///
-    pub fn layer<S>(self) -> Result<OpenTelemetryLayer<S, Tracer>, Error>
+    pub fn layer<S>(self) -> Result<AxiomOpenTelemetryLayer<S>, Error>
     where
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         let tracer = self.tracer()?;
-        let layer = tracing_opentelemetry::layer().with_tracer(tracer);
+        let inner_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+        let layer = AxiomOpenTelemetryLayer::with_inner(inner_layer);
         Ok(layer)
     }
 
@@ -382,7 +430,7 @@ mod tests {
 
     #[test]
     fn test_missing_token() {
-        match Builder::new().no_env().try_init() {
+        match Builder::new().no_env().init() {
             Err(Error::MissingToken) => {}
             result => panic!("expected MissingToken, got {:?}", result),
         };
@@ -390,7 +438,7 @@ mod tests {
 
     #[test]
     fn test_empty_token() {
-        match Builder::new().no_env().with_token("").try_init() {
+        match Builder::new().no_env().with_token("").init() {
             Err(Error::EmptyToken) => {}
             result => panic!("expected EmptyToken, got {:?}", result),
         };
@@ -398,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_invalid_token() {
-        match Builder::new().no_env().with_token("invalid").try_init() {
+        match Builder::new().no_env().with_token("invalid").init() {
             Err(Error::InvalidToken) => {}
             result => panic!("expected InvalidToken, got {:?}", result),
         };
@@ -411,7 +459,7 @@ mod tests {
             .with_token("xaat-123456789")
             .with_dataset("test")
             .with_url("<invalid>")
-            .try_init()
+            .init()
         {
             Err(Error::InvalidUrl(_)) => {}
             result => panic!("expected InvalidUrl, got {:?}", result),

@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let uuid = Uuid::new_v4();
     say_hi(uuid, "world");
 
-    let dataset: String = std::env::var("AXIOM_DATASET")?.into();
+    let dataset: String = std::env::var("AXIOM_DATASET")?;
 
     let query = dbg!(format!(
         r#"['{dataset}'] | where name == "say_hi" | take 5"#

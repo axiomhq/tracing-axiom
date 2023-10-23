@@ -56,7 +56,7 @@ pub struct ReadmeDoctests;
 /// subscriber was already installed or `AXIOM_TOKEN` and/or `AXIOM_DATASET`
 /// is not set or invalid.
 pub fn init() -> Result<(), Error> {
-    builder().try_init()
+    builder().init()
 }
 
 /// Create a new [`Builder`].
