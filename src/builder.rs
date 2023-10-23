@@ -26,7 +26,7 @@ use reqwest::Url;
 const CLOUD_URL: &str = "https://cloud.axiom.co";
 
 /// A layer that sends traces to Axiom via the `OpenTelemetry` protocol.
-/// The layer cleans up the OpenTelemetry global tracer provider on drop.
+/// The layer cleans up the `OpenTelemetry` global tracer provider on drop.
 pub struct AxiomOpenTelemetryLayer<S>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
