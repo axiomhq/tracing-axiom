@@ -1,4 +1,4 @@
-# **Examples**
+# Examples
 
 * [simple](./simple) - Uses defaults provided by Axiom and is a one line setup.
 * [fmt](./fmt) - Uses layers with out of the box local formatting and Axiom remote endpoint.
