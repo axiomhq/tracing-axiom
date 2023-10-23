@@ -471,7 +471,7 @@ mod tests {
         // Note that we can't test the init/try_init funcs here because OTEL
         // gets confused with the global subscriber.
 
-        let result: Result<OpenTelemetryLayer<Registry, Tracer>, Error> = Builder::new()
+        let result: Result<AxiomOpenTelemetryLayer<Registry>, Error> = Builder::new()
             .with_dataset("test")
             .with_token("xaat-123456789")
             .layer();
@@ -486,7 +486,7 @@ mod tests {
         let env_backup = env::var("AXIOM_TOKEN");
         env::set_var("AXIOM_TOKEN", "xaat-1234567890");
 
-        let result: Result<OpenTelemetryLayer<Registry, Tracer>, Error> =
+        let result: Result<AxiomOpenTelemetryLayer<Registry>, Error> =
             Builder::new().with_dataset("test").layer();
 
         if let Ok(token) = env_backup {
