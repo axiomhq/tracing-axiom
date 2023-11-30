@@ -1,9 +1,11 @@
 use tracing::{info, instrument};
 
 #[tokio::main]
-async fn main() {
-    let _guard = tracing_axiom::init();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_axiom::init()?;
     say_hello();
+
+    Ok(())
 }
 
 #[instrument]

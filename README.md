@@ -1,8 +1,3 @@
-# :warning: EXPERIMENTAL :warning:
-
-This is still experimental. Traces are ingested raw into Axiom and there's no nice way to view them (yet). 
-
-----
 
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-dark.svg#gh-dark-mode-only)
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-light.svg#gh-light-mode-only)
@@ -40,11 +35,12 @@ Then create an API token with ingest permission into that dataset in
 
 Now you can set up tracing in one line like this:
 
-```rust
+```rust,no_run
 #[tokio::main]
-async fn main() {
-    let _guard = tracing_axiom::init(); // or try_init() if you want to handle errors
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_axiom::init()?;
     say_hello();
+    Ok(())
 }
 
 #[tracing::instrument]
