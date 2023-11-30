@@ -1,8 +1,3 @@
-# :warning: EXPERIMENTAL :warning:
-
-This is still experimental. Traces are ingested raw into Axiom and there's no nice way to view them (yet). 
-
-----
 
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-dark.svg#gh-dark-mode-only)
 ![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-light.svg#gh-light-mode-only)
