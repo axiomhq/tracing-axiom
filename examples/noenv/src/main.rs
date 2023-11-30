@@ -1,4 +1,3 @@
-use axiom_rs::Client;
 use tracing::{info, instrument};
 use uuid::Uuid;
 
@@ -18,11 +17,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let uuid = Uuid::new_v4();
     say_hi(uuid, "world");
-
-    let query = r#"['tracing-axiom-examples'] | where name == "say_hi""#.to_string();
-
-    let client = Client::new()?;
-    let _result = client.datasets.apl_query(query, None).await?;
 
     // do something with result ...
 
