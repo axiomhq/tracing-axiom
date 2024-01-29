@@ -64,6 +64,7 @@ that can be enabled or disabled:
   over HTTPS.
 - **native-tls**: Enables TLS functionality provided by `native-tls`.
 - **rustls-tls**: Enables TLS functionality provided by `rustls`.
+- **tokio** _(enabled by default)_: Uses a more efficient batch processor.
 
 ## FAQ & Troubleshooting
 ### How do I log traces to the console in addition to Axiom?

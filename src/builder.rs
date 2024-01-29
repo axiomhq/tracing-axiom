@@ -314,16 +314,16 @@ impl Builder {
 
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()
-            .with_exporter(
-                opentelemetry_otlp::new_exporter()
+            .with_exporter({
+                let exporter = opentelemetry_otlp::new_exporter()
                     .http()
-                    .with_http_client(reqwest::Client::new())
                     .with_endpoint(url)
                     .with_headers(headers)
-                    .with_timeout(Duration::from_secs(3)),
-            )
-            .with_trace_config(trace_config)
-            .install_batch(opentelemetry::runtime::Tokio)?;
+                    .with_timeout(Duration::from_secs(3));
+                return exporter.with_http_client(reqwest::blocking::Client::new());
+            })
+            .with_trace_config(trace_config);
+        let tracer = tracer.install_simple()?;
         Ok(tracer)
     }
 }
