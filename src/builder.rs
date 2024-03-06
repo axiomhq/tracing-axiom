@@ -413,6 +413,7 @@ mod tests {
         // gets confused with the global subscriber.
 
         let result = Builder::new()
+            .no_env()
             .with_dataset("test")
             .with_token("xaat-123456789")
             .layer::<Registry>();
