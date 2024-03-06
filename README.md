@@ -40,6 +40,10 @@ Now you can set up tracing in one line like this:
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_axiom::init()?;
     say_hello();
+
+    // Ensure that the tracing provider is shutdown correctly
+    opentelemetry::global::shutdown_tracer_provider();
+
     Ok(())
 }
 
@@ -52,7 +56,7 @@ pub fn say_hello() {
 For further examples, head over to the [examples](examples) directory.
 
 > **Note**: Due to a limitation of an underlying library, [events outside of a 
-> span are not recorded](https://docs.rs/tracing-opentelemetry/0.17.4/src/tracing_opentelemetry/layer.rs.html#807).
+> span are not recorded](https://docs.rs/tracing-opentelemetry/latest/src/tracing_opentelemetry/layer.rs.html#807).
 
 ## Features
 
@@ -66,6 +70,7 @@ that can be enabled or disabled:
 - **rustls-tls**: Enables TLS functionality provided by `rustls`.
 
 ## FAQ & Troubleshooting
+
 ### How do I log traces to the console in addition to Axiom?
 You can use this library to get a [`tracing-subscriber::layer`](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/layer/index.html) 
 and combine it with other layers, for example one that prints traces to the 

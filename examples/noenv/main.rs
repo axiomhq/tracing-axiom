@@ -10,15 +10,18 @@ fn say_hi(id: Uuid, name: impl Into<String> + std::fmt::Debug) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_axiom::builder()
         .with_tags(&[("aws_region", "us-east-1")]) // Set otel tags
-        .with_dataset("tracing-axiom-examples".to_string()) // Set dataset
+        .with_dataset("tracing-axiom-examples") // Set dataset
         .with_token("xaat-some-valid-token") // Set API token
-        .with_url("Some valid URL other than default") // Set URL
+        .with_url("http://localhost:4318") // Set URL, local Jaeger can be changed to any OTEL endpoint
         .init()?; // Initialize tracing
 
     let uuid = Uuid::new_v4();
     say_hi(uuid, "world");
 
     // do something with result ...
+
+    // Ensure that the tracing provider is shutdown correctly
+    opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
 }

@@ -42,25 +42,5 @@ pub enum Error {
 
     /// The environment variable is not present.
     #[error("Environment variable {0} is required but missing")]
-    EnvVarMissing(String),
-}
-
-impl PartialEq for Error {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            // Coerce partial_eq as inner error is not comparable
-            (Error::TraceError(_), Error::TraceError(_))
-            | (Error::InitErr(_), Error::InitErr(_))
-            // Our errors are comparable, natch
-            | (Error::MissingToken, Error::MissingToken)
-            | (Error::EmptyToken, Error::EmptyToken)
-            | (Error::InvalidToken, Error::InvalidToken)
-            | (Error::MissingDatasetName, Error::MissingDatasetName)
-            | (Error::EmptyDatasetName, Error::EmptyDatasetName) => true,
-            (Error::InvalidUrl(lhs), Error::InvalidUrl(rhs)) => lhs == rhs,
-            (Error::EnvVarNotUnicode(lhs), Error::EnvVarNotUnicode(rhs))
-            | (Error::EnvVarMissing(lhs), Error::EnvVarMissing(rhs)) => lhs == rhs,
-            _ => false,
-        }
-    }
+    EnvVarMissing(&'static str),
 }

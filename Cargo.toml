@@ -15,20 +15,60 @@ include = ["src/**/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
 resolver = "2"
 
 [dependencies]
-opentelemetry = { version =  "0.20", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.13", features = ["prost", "tokio", "http-proto", "reqwest-client" ] }
+opentelemetry = { version = "0.22" }
+opentelemetry-otlp = { version = "0.15", features = [
+    "prost",
+    "tokio",
+    "http-proto",
+    "reqwest-client",
+] }
 tracing-core = { version = "0.1", default-features = false, features = ["std"] }
-tracing-opentelemetry = { version = "0.21", default-features = false }
-tracing-subscriber = { version = "0.3", default-features = false, features = ["smallvec", "std", "registry", "fmt", "json" ] }
+tracing-opentelemetry = { version = "0.23", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "smallvec",
+    "std",
+    "registry",
+    "fmt",
+    "json",
+] }
 reqwest = { version = "0.11", default-features = false }
 thiserror = "1"
-opentelemetry-semantic-conventions = "0.12"
+opentelemetry-semantic-conventions = "0.14"
 url = "2.4.1"
+opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
 
 [dev-dependencies]
-tokio = "1"
-tracing = { version = "0.1", features = [ "log" ] }
-opentelemetry = { version =  "0.20", features = ["rt-tokio"] }
+tokio = { version = "1", features = ["full", "tracing"] }
+tracing = { version = "0.1", features = ["log"] }
+opentelemetry = { version = "0.22" }
+anyhow = "1.0.80"
+uuid = { version = "1", features = ["v4"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "smallvec",
+    "std",
+    "registry",
+    "fmt",
+    "json",
+    "ansi",
+] }
+
+# Example that demonstrates how to use the `tracing-axiom` layer with the `tracing-subscriber` crate.
+[[example]]
+name = "layers"
+
+# Simple most example use of `tracing-axiom`.
+[[example]]
+name = "simple"
+
+# Example that demonstrates using a nice color and formating
+[[example]]
+name = "fmt"
+
+
+# Demonstrate setting config in the code
+[[example]]
+name = "noenv"
+
 
 [features]
 default = ["default-tls"]

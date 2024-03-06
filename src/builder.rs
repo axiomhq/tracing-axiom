@@ -1,57 +1,42 @@
-use opentelemetry::{
-    sdk::{
-        trace::{Config as TraceConfig, Tracer},
-        Resource,
-    },
-    Key, KeyValue,
-};
+use crate::Error;
+use opentelemetry::{Key, KeyValue};
 use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::{
+    trace::{Config as TraceConfig, Tracer},
+    Resource,
+};
 use opentelemetry_semantic_conventions::resource::{
     SERVICE_NAME, TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_NAME, TELEMETRY_SDK_VERSION,
 };
+use reqwest::Url;
 use std::{
     collections::HashMap,
     env::{self, VarError},
+    marker::PhantomData,
     time::Duration,
 };
 use tracing_core::Subscriber;
 use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::{
-    layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, Layer, Registry,
+    layer::{Layered, SubscriberExt},
+    registry::LookupSpan,
+    util::SubscriberInitExt,
+    Layer, Registry,
 };
 
-use crate::Error;
-use reqwest::Url;
-
-const CLOUD_URL: &str = "https://cloud.axiom.co";
+const CLOUD_URL: &str = "https://cloud.axiom.co/api";
 
 /// A layer that sends traces to Axiom via the `OpenTelemetry` protocol.
 /// The layer cleans up the `OpenTelemetry` global tracer provider on drop.
-pub struct AxiomOpenTelemetryLayer<S>
-where
-    S: Subscriber + for<'span> LookupSpan<'span>,
-    Self: 'static,
-{
-    pub(crate) inner: OpenTelemetryLayer<S, Tracer>,
-}
+type AxiomOpenTelemetryComposedLayer<S> =
+    Layered<OpenTelemetryLayer<S, Tracer>, AxiomOpenTelemetryLayer<S>, S>;
 
-impl<S> AxiomOpenTelemetryLayer<S>
-where
-    S: Subscriber + for<'span> LookupSpan<'span>,
-    Self: 'static,
-{
-    fn with_inner(layer: OpenTelemetryLayer<S, Tracer>) -> Self {
-        Self { inner: layer }
-    }
-}
-
-impl<S> Drop for AxiomOpenTelemetryLayer<S>
-where
-    S: Subscriber + for<'span> LookupSpan<'span>,
-    Self: 'static,
-{
-    fn drop(&mut self) {
-        opentelemetry::global::shutdown_tracer_provider();
+/// A layer that sends traces to Axiom via the `OpenTelemetry` protocol.
+/// The layer cleans up the `OpenTelemetry` global tracer provider on drop.
+pub struct AxiomOpenTelemetryLayer<S>(PhantomData<S>);
+impl<S> Default for AxiomOpenTelemetryLayer<S> {
+    fn default() -> Self {
+        Self(PhantomData)
     }
 }
 
@@ -60,29 +45,6 @@ where
     S: Subscriber + for<'span> LookupSpan<'span>,
     Self: 'static,
 {
-    fn on_enter(
-        &self,
-        id: &tracing_core::span::Id,
-        ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
-        self.inner.on_enter(id, ctx);
-    }
-
-    fn on_exit(&self, id: &tracing_core::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
-        self.inner.on_exit(id, ctx);
-    }
-
-    fn on_close(&self, id: tracing_core::span::Id, ctx: tracing_subscriber::layer::Context<'_, S>) {
-        self.inner.on_close(id, ctx);
-    }
-
-    fn on_event(
-        &self,
-        event: &tracing_core::Event<'_>,
-        ctx: tracing_subscriber::layer::Context<'_, S>,
-    ) {
-        self.inner.on_event(event, ctx);
-    }
 }
 
 /// Builder for creating a tracing tracer, a layer or a subscriber that sends traces to
@@ -105,7 +67,7 @@ pub struct Builder {
 #[allow(clippy::match_same_arms)] // We want clarity here
 fn resolve_configurable(
     should_check_environment: bool,
-    env_var_name: &str,
+    env_var_name: &'static str,
     explicit_var: &Option<String>,
     predicate_check: fn(value: &Option<String>) -> Result<String, Error>,
 ) -> Result<String, Error> {
@@ -120,14 +82,12 @@ fn resolve_configurable(
             Err(err) => Err(err),
         },
         // If we respect the environment variables, and token is not set explicitly, use them
-        (true, Ok(maybe_ok_var), &None) => match predicate_check(&Some(maybe_ok_var)) {
+        (true, Ok(maybe_ok_var), _) => match predicate_check(&Some(maybe_ok_var)) {
             Ok(valid_var) => Ok(valid_var),
             Err(err) => Err(err),
         },
         // If env or programmatic token are invalid, fail and bail
-        (true, Err(VarError::NotPresent), &None) => {
-            Err(Error::EnvVarMissing(env_var_name.to_string()))
-        }
+        (true, Err(VarError::NotPresent), &None) => Err(Error::EnvVarMissing(env_var_name)),
         (true, Err(VarError::NotPresent), maybe_ok_var) => match predicate_check(maybe_ok_var) {
             Ok(valid_var) => Ok(valid_var),
             Err(err) => Err(err),
@@ -135,11 +95,6 @@ fn resolve_configurable(
         (true, Err(VarError::NotUnicode(_)), _) => {
             Err(Error::EnvVarNotUnicode(env_var_name.to_string()))
         }
-        // Heuston, we have two tokens! Use the explicit override over the env variable
-        (true, Ok(_), maybe_ok_var) => match predicate_check(maybe_ok_var) {
-            Ok(valid_var) => Ok(valid_var),
-            Err(err) => Err(err),
-        },
     }
 }
 
@@ -238,13 +193,14 @@ impl Builder {
     /// a global subscriber was already installed or `AXIOM_TOKEN` is not set or
     /// invalid.
     ///
-    pub fn layer<S>(self) -> Result<AxiomOpenTelemetryLayer<S>, Error>
+    pub fn layer<S>(self) -> Result<AxiomOpenTelemetryComposedLayer<S>, Error>
     where
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         let tracer = self.tracer()?;
-        let inner_layer = tracing_opentelemetry::layer().with_tracer(tracer);
-        let layer = AxiomOpenTelemetryLayer::with_inner(inner_layer);
+        let inner_layer: OpenTelemetryLayer<S, Tracer> =
+            tracing_opentelemetry::layer().with_tracer(tracer);
+        let layer = AxiomOpenTelemetryLayer::default().and_then(inner_layer);
         Ok(layer)
     }
 
@@ -285,7 +241,7 @@ impl Builder {
         let dataset_name = self.resolve_dataset_name()?;
         let url = self.resolve_axiom_url()?;
 
-        let url = url.parse::<Url>()?.join("/api/v1/traces")?;
+        let url = url.parse::<Url>()?;
 
         let mut headers = HashMap::with_capacity(2);
         headers.insert("Authorization".to_string(), format!("Bearer {token}"));
@@ -323,7 +279,7 @@ impl Builder {
                     .with_timeout(Duration::from_secs(3)),
             )
             .with_trace_config(trace_config)
-            .install_batch(opentelemetry::runtime::Tokio)?;
+            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
         Ok(tracer)
     }
 }
@@ -345,30 +301,27 @@ mod tests {
         Ok(saved_env)
     }
 
-    fn restore_axiom_env(saved_env: HashMap<String, String>) -> Result<(), Error> {
+    fn restore_axiom_env(saved_env: HashMap<String, String>) {
         for (key, value) in saved_env {
             std::env::set_var(key, value);
         }
-        Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_no_env_skips_env_variables() -> Result<(), Error> {
         let builder = Builder::new().no_env();
-        assert_eq!(builder.no_env, true);
+        assert!(builder.no_env);
         assert_eq!(builder.token, None);
         assert_eq!(builder.dataset_name, None);
-        assert_eq!(builder.url, Some("https://cloud.axiom.co".into()));
+        assert_eq!(builder.url, Some("https://cloud.axiom.co/api".into()));
 
-        let err = Builder::new().no_env().tracer();
-        assert!(err.is_err());
-        assert_eq!(err.unwrap_err(), Error::MissingToken);
+        let err: Result<Tracer, Error> = Builder::new().no_env().tracer();
+        matches!(err, Err(Error::MissingToken));
 
         let mut builder = Builder::new().no_env();
         builder.token = Some("xaat-snot".into());
         let err = builder.tracer();
-        assert!(err.is_err());
-        assert_eq!(err.unwrap_err(), Error::MissingDatasetName);
+        matches!(err, Err(Error::MissingDatasetName));
 
         let mut builder = Builder::new().no_env();
         builder.token = Some("xaat-snot".into());
@@ -382,35 +335,27 @@ mod tests {
         builder.url = Some("<invalid>".into());
         let err = builder.tracer();
         assert!(err.is_err());
-        assert_eq!(
-            err.unwrap_err(),
-            Error::InvalidUrl(url::ParseError::RelativeUrlWithoutBase)
+        matches!(
+            err,
+            Err(Error::InvalidUrl(url::ParseError::RelativeUrlWithoutBase))
         );
 
         Ok(())
     }
 
     #[tokio::test]
-    async fn with_env_respects_env_variables() -> Result<(), Error> {
-        let cached_env = cache_axiom_env().unwrap();
+    async fn with_env_respects_env_variables() -> Result<(), Box<dyn std::error::Error>> {
+        let cached_env = cache_axiom_env()?;
 
         let builder = Builder::new();
-        assert_eq!(builder.no_env, false);
+        assert!(!builder.no_env);
 
         let err = Builder::new().tracer();
-        assert!(err.is_err());
-        assert_eq!(
-            err.unwrap_err(),
-            Error::EnvVarMissing("AXIOM_TOKEN".to_string())
-        );
+        matches!(err, Err(Error::EnvVarMissing("AXIOM_TOKEN")));
 
         std::env::set_var("AXIOM_TOKEN", "xaat-snot");
         let err = Builder::new().tracer();
-        assert!(err.is_err());
-        assert_eq!(
-            err.unwrap_err(),
-            Error::EnvVarMissing("AXIOM_DATASET".to_string())
-        );
+        matches!(err, Err(Error::EnvVarMissing("AXIOM_DATASET")));
 
         std::env::set_var("AXIOM_DATASET", "test");
         let ok = Builder::new().tracer();
@@ -424,46 +369,42 @@ mod tests {
         // let ok = Builder::new().tracer();
         // assert!(ok.is_ok());
 
-        restore_axiom_env(cached_env)?;
+        restore_axiom_env(cached_env);
         Ok(())
     }
 
     #[test]
     fn test_missing_token() {
-        match Builder::new().no_env().init() {
-            Err(Error::MissingToken) => {}
-            result => panic!("expected MissingToken, got {:?}", result),
-        };
+        matches!(Builder::new().no_env().init(), Err(Error::MissingToken));
     }
 
     #[test]
     fn test_empty_token() {
-        match Builder::new().no_env().with_token("").init() {
-            Err(Error::EmptyToken) => {}
-            result => panic!("expected EmptyToken, got {:?}", result),
-        };
+        matches!(
+            Builder::new().no_env().with_token("").init(),
+            Err(Error::EmptyToken)
+        );
     }
 
     #[test]
     fn test_invalid_token() {
-        match Builder::new().no_env().with_token("invalid").init() {
-            Err(Error::InvalidToken) => {}
-            result => panic!("expected InvalidToken, got {:?}", result),
-        };
+        matches!(
+            Builder::new().no_env().with_token("invalid").init(),
+            Err(Error::InvalidToken)
+        );
     }
 
     #[test]
     fn test_invalid_url() {
-        match Builder::new()
-            .no_env()
-            .with_token("xaat-123456789")
-            .with_dataset("test")
-            .with_url("<invalid>")
-            .init()
-        {
-            Err(Error::InvalidUrl(_)) => {}
-            result => panic!("expected InvalidUrl, got {:?}", result),
-        };
+        matches!(
+            Builder::new()
+                .no_env()
+                .with_token("xaat-123456789")
+                .with_dataset("test")
+                .with_url("<invalid>")
+                .init(),
+            Err(Error::InvalidUrl(_))
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -471,10 +412,11 @@ mod tests {
         // Note that we can't test the init/try_init funcs here because OTEL
         // gets confused with the global subscriber.
 
-        let result: Result<AxiomOpenTelemetryLayer<Registry>, Error> = Builder::new()
+        let result = Builder::new()
             .with_dataset("test")
             .with_token("xaat-123456789")
-            .layer();
+            .layer::<Registry>();
+
         assert!(result.is_ok(), "{:?}", result.err());
     }
 
@@ -486,8 +428,7 @@ mod tests {
         let env_backup = env::var("AXIOM_TOKEN");
         env::set_var("AXIOM_TOKEN", "xaat-1234567890");
 
-        let result: Result<AxiomOpenTelemetryLayer<Registry>, Error> =
-            Builder::new().with_dataset("test").layer();
+        let result = Builder::new().with_dataset("test").layer::<Registry>();
 
         if let Ok(token) = env_backup {
             env::set_var("AXIOM_TOKEN", token);
