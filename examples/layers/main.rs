@@ -1,5 +1,5 @@
 use opentelemetry::global;
-use opentelemetry::sdk::propagation::TraceContextPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tracing::{info, instrument};
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -58,6 +58,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     say_hi(uuid, "world");
 
     // do something with result ...
+
+    // Ensure that the tracing provider is shutdown correctly
+    opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
 }
