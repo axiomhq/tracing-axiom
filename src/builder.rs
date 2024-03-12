@@ -313,7 +313,7 @@ mod tests {
         assert!(builder.no_env);
         assert_eq!(builder.token, None);
         assert_eq!(builder.dataset_name, None);
-        assert_eq!(builder.url, Some("https://cloud.axiom.co/api".into()));
+        assert_eq!(builder.url, Some("https://api.axiom.co".into()));
 
         let err: Result<Tracer, Error> = Builder::new().no_env().tracer();
         matches!(err, Err(Error::MissingToken));
