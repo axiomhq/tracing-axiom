@@ -24,7 +24,7 @@ use tracing_subscriber::{
     Layer, Registry,
 };
 
-const CLOUD_URL: &str = "https://cloud.axiom.co/api";
+const CLOUD_URL: &str = "https://api.axiom.co";
 
 /// A layer that sends traces to Axiom via the `OpenTelemetry` protocol.
 /// The layer cleans up the `OpenTelemetry` global tracer provider on drop.
