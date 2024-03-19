@@ -1,6 +1,6 @@
 [package]
 name = "tracing-axiom"
-version = "0.6.0"
+version = "0.6.1"
 authors = [
     "Arne Bahlo <arne@axiom.co>",
     "Darach Ennis <darach@gmail.com>",
@@ -15,7 +15,13 @@ repository = "https://github.com/axiomhq/tracing-axiom"
 documentation = "https://docs.rs/tracing-axiom"
 keywords = ["tracing", "axiom", "instrumentation", "opentelemetry"]
 readme = "README.md"
-include = ["src/**/*.rs", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
+include = [
+    "src/**/*.rs",
+    "examples",
+    "README.md",
+    "LICENSE-APACHE",
+    "LICENSE-MIT",
+]
 resolver = "2"
 
 [dependencies]
