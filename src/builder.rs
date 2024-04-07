@@ -259,6 +259,7 @@ impl Builder {
         ]);
 
         if let Some(service_name) = self.service_name {
+            // TODO: Is there a way to get the name of the bin crate using this?
             tags.push(KeyValue::new(SERVICE_NAME, service_name));
         }
 
