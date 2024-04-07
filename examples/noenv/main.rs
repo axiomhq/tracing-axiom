@@ -9,6 +9,7 @@ fn say_hi(id: Uuid, name: impl Into<String> + std::fmt::Debug) {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_axiom::builder()
+        .with_service_name("noenv")
         .with_tags(&[("aws_region", "us-east-1")]) // Set otel tags
         .with_dataset("tracing-axiom-examples") // Set dataset
         .with_token("xaat-some-valid-token") // Set API token
