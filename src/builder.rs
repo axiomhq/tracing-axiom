@@ -251,14 +251,6 @@ impl Builder {
             format!("tracing-axiom/{}", env!("CARGO_PKG_VERSION")),
         );
 
-        let mut trace_config = self.trace_config.unwrap_or_default();
-        if let Some(service_name) = self.service_name {
-            trace_config = trace_config.with_resource(Resource::new(vec![KeyValue::new(
-                SERVICE_NAME,
-                service_name, // TODO: Is there a way to get the name of the bin crate using this?
-            )]));
-        }
-
         let mut tags = self.tags.clone();
         tags.extend(vec![
             KeyValue::new(TELEMETRY_SDK_NAME, env!("CARGO_PKG_NAME").to_string()),
@@ -266,7 +258,15 @@ impl Builder {
             KeyValue::new(TELEMETRY_SDK_LANGUAGE, "rust".to_string()),
         ]);
 
-        trace_config = trace_config.with_resource(Resource::new(tags));
+        if let Some(service_name) = self.service_name {
+            // TODO: Is there a way to get the name of the bin crate using this?
+            tags.push(KeyValue::new(SERVICE_NAME, service_name));
+        }
+
+        let trace_config = self
+            .trace_config
+            .unwrap_or_default()
+            .with_resource(Resource::new(tags));
 
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()

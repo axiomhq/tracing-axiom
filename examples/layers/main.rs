@@ -22,7 +22,10 @@ fn setup_tracing(otel_is_configured: bool, tags: &[(&str, &str)]) -> Result<(), 
             .with_target(false);
 
         // Setup an Axiom OpenTelemetry compatible tracing layer
-        let axiom_layer = tracing_axiom::builder().with_tags(tags).layer()?;
+        let axiom_layer = tracing_axiom::builder()
+            .with_service_name("layers")
+            .with_tags(tags)
+            .layer()?;
 
         // Setup our multi-layered tracing subscriber
         Registry::default()
