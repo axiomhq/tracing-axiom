@@ -25,12 +25,12 @@ pub enum Error {
     InvalidToken,
 
     /// The required Axiom dataset name is missing.
-    #[error("Dataset name is missing")]
-    MissingDatasetName,
+    #[error("Dataset is missing")]
+    MissingDataset,
 
     /// The required Axiom dataset name is empty.
-    #[error("Dataset name is empty")]
-    EmptyDatasetName,
+    #[error("Dataset is empty")]
+    EmptyDataset,
 
     /// The required Axiom dataset name is invalid.
     #[error("Invalid URL: {0}")]
