@@ -25,13 +25,9 @@ include = [
 resolver = "2"
 
 [dependencies]
-opentelemetry = { version = "0.22" }
-opentelemetry-otlp = { version = "0.15", features = [
-    "prost",
-    "tokio",
-    "http-proto",
-    "reqwest-client",
-] }
+url = "2.4.1"
+thiserror = "1"
+
 tracing-core = { version = "0.1", default-features = false, features = ["std"] }
 tracing-opentelemetry = { version = "0.23", default-features = false }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
@@ -41,18 +37,22 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
     "fmt",
     "json",
 ] }
+
+
 reqwest = { version = "0.11", default-features = false }
-thiserror = "1"
-opentelemetry-semantic-conventions = "0.14"
-url = "2.4.1"
-opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
+opentelemetry = { version = "0.22" }
+opentelemetry-otlp = { version = "0.15", features = [
+    "prost",
+    "tokio",
+    "http-proto",
+    "reqwest-client",
+] }
+opentelemetry-semantic-conventions = "0.15"
+opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "tracing"] }
 tracing = { version = "0.1", features = ["log"] }
-opentelemetry = { version = "0.22" }
-anyhow = "1.0.80"
-uuid = { version = "1", features = ["v4"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
     "smallvec",
     "std",

@@ -21,7 +21,7 @@ For more information check out the [official documentation](https://axiom.co/doc
 
 ## Usage
 
-Add the following to your Cargo.toml:
+Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -36,14 +36,12 @@ Then create an API token with ingest permission into that dataset in
 Now you can set up tracing in one line like this:
 
 ```rust,no_run
+use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _, Registry};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_axiom::init()?;
+    let axiom_layer = tracing_axiom::default("readme")?; // Set AXIOM_DATASET and AXIOM_TOKEN in your env!
+    Registry::default().with(axiom_layer).init();
     say_hello();
-
-    // Ensure that the tracing provider is shutdown correctly
-    opentelemetry::global::shutdown_tracer_provider();
-
     Ok(())
 }
 
