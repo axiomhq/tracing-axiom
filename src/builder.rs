@@ -52,7 +52,6 @@ impl Builder {
     ///
     /// # Errors
     /// If the dataset name is empty.
-    #[must_use]
     pub fn with_dataset(mut self, dataset_name: impl Into<String>) -> Result<Self, Error> {
         let dataset_name: String = dataset_name.into();
         if dataset_name.is_empty() {
@@ -67,7 +66,6 @@ impl Builder {
     ///
     /// # Errors
     /// If the token is empty or does not start with `xaat-` (aka is not a api token).
-    #[must_use]
     pub fn with_token(mut self, token: impl Into<String>) -> Result<Self, Error> {
         let token: String = token.into();
         if token.is_empty() {
@@ -84,7 +82,6 @@ impl Builder {
     ///
     /// # Errors
     /// If the URL is not a valid URL.
-    #[must_use]
     pub fn with_url(mut self, url: &str) -> Result<Self, Error> {
         self.url = Some(url.parse()?);
         Ok(self)
@@ -136,22 +133,21 @@ impl Builder {
     ///
     /// # Errors
     /// If an environment variable is not valid UTF8, or any of their values are invalid.
-    #[must_use]
     pub fn with_env(mut self) -> Result<Self, Error> {
         if self.token.is_none() {
             if let Some(t) = get_env("AXIOM_TOKEN")? {
-                self = self.with_token(t)?
+                self = self.with_token(t)?;
             }
         };
 
         if self.dataset_name.is_none() {
             if let Some(d) = get_env("AXIOM_DATASET")? {
-                self = self.with_dataset(d)?
+                self = self.with_dataset(d)?;
             }
         };
         if self.url.is_none() {
             if let Some(u) = get_env("AXIOM_URL")? {
-                self = self.with_url(&u)?
+                self = self.with_url(&u)?;
             }
         };
 
@@ -175,7 +171,7 @@ impl Builder {
         let dataset_name = self.dataset_name.ok_or(Error::MissingDataset)?;
         let url = self
             .url
-            .unwrap_or_else(|| CLOUD_URL.to_string().parse().unwrap());
+            .unwrap_or_else(|| CLOUD_URL.to_string().parse().expect("this is a valid URL"));
 
         let mut headers = HashMap::with_capacity(2);
         headers.insert("Authorization".to_string(), format!("Bearer {token}"));
