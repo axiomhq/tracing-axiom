@@ -1,6 +1,6 @@
 name: CI
 
-on: 
+on:
   pull_request:
     branches:
       - main
@@ -23,10 +23,6 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          components: rustfmt
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
@@ -62,19 +58,15 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
       - name: Run cargo test
-        uses: actions-rs/cargo@v1
         env:
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_URL: https://cloud.dev.axiomtestlabs.co
           AXIOM_DATASET: _traces
-        with:
-          command: test
+        run: cargo test
 
   validate-crate:
-    name: Clippy check
+    name: Validate crate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -85,17 +77,8 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install clippy
-        run: rustup component add clippy
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
-        env:
-          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
-          AXIOM_URL: https://cloud.dev.axiomtestlabs.co
-          AXIOM_DATASET: _traces
-        with:
-          command: publish --dry-run
-
+      - name: Test publish
+        run: cargo publish --dry-run
 
   publish_on_crates_io:
     name: Publish on crates.io
@@ -107,9 +90,7 @@ jobs:
       - test
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: publish
+      - name: Publish on crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
