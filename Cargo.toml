@@ -74,14 +74,12 @@ name = "simple"
 [[example]]
 name = "fmt"
 
-
 # Demonstrate setting config in the code
 [[example]]
 name = "noenv"
 
-
 [features]
-default = ["default-tls"]
+default = ["rustls-tls"]
 default-tls = ["reqwest/default-tls"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
