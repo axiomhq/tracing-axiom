@@ -1,6 +1,6 @@
 [package]
 name = "tracing-axiom"
-version = "0.6.1"
+version = "0.7.0"
 authors = [
     "Arne Bahlo <arne@axiom.co>",
     "Darach Ennis <darach@gmail.com>",
