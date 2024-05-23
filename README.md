@@ -33,7 +33,7 @@ Then create an API token with ingest permission into that dataset in
 [the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as
 `AXIOM_TOKEN`.
 
-Now you can set up tracing in one line like this:
+Now you can set up tracing like this:
 
 ```rust,no_run
 use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _, Registry};
@@ -62,10 +62,9 @@ The following are a list of
 [Cargo features](https://doc.rust-lang.org/stable/cargo/reference/features.html#the-features-section)
 that can be enabled or disabled:
 
-- **default-tls** _(enabled by default)_: Provides TLS support to connect
-  over HTTPS.
+- **rustls-tls** _(enabled by default)_: Enables TLS functionality provided by `rustls`.
+- **default-tls**: uses reqwest default TLS library.
 - **native-tls**: Enables TLS functionality provided by `native-tls`.
-- **rustls-tls**: Enables TLS functionality provided by `rustls`.
 
 ## FAQ & Troubleshooting
 
