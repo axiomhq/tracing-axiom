@@ -1,15 +1,19 @@
+# tracing-axiom
 
-![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-dark.svg#gh-dark-mode-only)
-![tracing-axiom: The official Rust tracing layer for Axiom](.github/images/banner-light.svg#gh-light-mode-only)
-
-<div align="center">
+<a href="https://axiom.co">
+<picture>
+  <source media="(prefers-color-scheme: dark) and (min-width: 600px)" srcset="https://axiom.co/assets/github/axiom-github-banner-light-vertical.svg">
+  <source media="(prefers-color-scheme: light) and (min-width: 600px)" srcset="https://axiom.co/assets/github/axiom-github-banner-dark-vertical.svg">
+  <source media="(prefers-color-scheme: dark) and (max-width: 599px)" srcset="https://axiom.co/assets/github/axiom-github-banner-light-horizontal.svg">
+  <img alt="Axiom.co banner" src="https://axiom.co/assets/github/axiom-github-banner-dark-horizontal.svg" align="right">
+</picture>
+</a>
+&nbsp;
 
 [![docs.rs](https://docs.rs/tracing-axiom/badge.svg)](https://docs.rs/tracing-axiom/)
 [![build](https://img.shields.io/github/workflow/status/axiomhq/tracing-axiom/CI?ghcache=unused)](https://github.com/axiomhq/tracing-axiom/actions?query=workflow%3ACI)
 [![crates.io](https://img.shields.io/crates/v/tracing-axiom.svg)](https://crates.io/crates/tracing-axiom)
 [![License](https://img.shields.io/crates/l/tracing-axiom)](LICENSE-APACHE)
-
-</div>
 
 [Axiom](https://axiom.co) unlocks observability at any scale.
 
