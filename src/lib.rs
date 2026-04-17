@@ -54,7 +54,7 @@ pub struct ReadmeDoctests;
 ///
 /// It uses the environment variables `AXIOM_TOKEN` and optionally `AXIOM_URL` and `AXIOM_DATASET`
 /// to configure the endpoint.
-/// If you want to manually set these or other attributres, use `builder()` or `builder_with_env()`.
+/// If you want to manually set these or other attributes, use `builder()` or `builder_with_env()`.
 ///
 /// # Errors
 ///
@@ -68,7 +68,7 @@ where
     builder_with_env(service_name)?.build()
 }
 
-/// Create a new [`Builder`] and set the configuratuin from the environment.
+/// Create a new [`Builder`] and set the configuration from the environment.
 ///
 /// # Errors
 /// If any of the environment variables are invalid, missing variables are not causing errors as
