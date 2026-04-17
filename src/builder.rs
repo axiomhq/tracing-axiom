@@ -138,18 +138,18 @@ impl Builder {
             if let Some(t) = get_env("AXIOM_TOKEN")? {
                 self = self.with_token(t)?;
             }
-        };
+        }
 
         if self.dataset_name.is_none() {
             if let Some(d) = get_env("AXIOM_DATASET")? {
                 self = self.with_dataset(d)?;
             }
-        };
+        }
         if self.url.is_none() {
             if let Some(u) = get_env("AXIOM_URL")? {
                 self = self.with_url(&u)?;
             }
-        };
+        }
 
         Ok(self)
     }
