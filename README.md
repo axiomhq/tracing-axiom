@@ -34,7 +34,7 @@ tracing-axiom = "0.7"
 
 Create a dataset in Axiom and export the name as `AXIOM_DATASET`.
 Then create an API token with ingest permission into that dataset in
-[the Axiom settings](https://cloud.axiom.co/settings/profile) and export it as
+[the Axiom settings](https://app.axiom.co/settings/profile) and export it as
 `AXIOM_TOKEN`.
 
 Now you can set up tracing like this:
