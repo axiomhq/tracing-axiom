@@ -23,7 +23,7 @@ const CLOUD_URL: &str = "https://api.axiom.co";
 /// Builder for creating a tracing tracer, a layer or a subscriber that sends traces to
 /// Axiom via the `OpenTelemetry` protocol. The API token is read from the `AXIOM_TOKEN`
 /// environment variable. The dataset name is read from the `AXIOM_DATASET` environment
-/// variable. The URL defaults to Axiom Cloud whose URL is `https://cloud.axiom.co` but
+/// variable. The URL defaults to Axiom API whose URL is `https://api.axiom.co` but
 /// can be overridden by setting the `AXIOM_URL` environment variable for testing purposes
 ///
 #[derive(Debug, Default)]
