@@ -43,7 +43,7 @@ reqwest = { version = "0.12", default-features = false }
 opentelemetry = { version = "0.31" }
 opentelemetry-otlp = { version = "0.31", default-features = false, features = [
     "http-proto",
-    "reqwest-client",
+    "reqwest-blocking-client",
     "trace",
 ] }
 opentelemetry-semantic-conventions = "0.31"

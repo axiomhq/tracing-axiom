@@ -215,9 +215,14 @@ impl Builder {
 
         let resource = Resource::builder_empty().with_attributes(tags).build();
 
+        // opentelemetry_sdk 0.31's `BatchSpanProcessor` runs on a dedicated OS
+        // thread; per its own docs that thread only supports the OTLP
+        // `reqwest-blocking-client` or `grpc-tonic` exporters. The async
+        // `reqwest::Client` here would panic with "there is no reactor running"
+        // on every batch flush.
         let exporter = SpanExporter::builder()
             .with_http()
-            .with_http_client(reqwest::Client::new())
+            .with_http_client(reqwest::blocking::Client::new())
             .with_endpoint(url.to_string())
             .with_protocol(Protocol::HttpBinary)
             .with_headers(headers)
