@@ -39,7 +39,7 @@
 mod builder;
 mod error;
 
-pub use builder::Builder;
+pub use builder::{Builder, shutdown};
 pub use error::Error;
 use opentelemetry_sdk::trace::Tracer;
 use tracing_core::Subscriber;
