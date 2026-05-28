@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     say_hello();
 
     // Ensure that the tracing provider is shutdown correctly
-    opentelemetry::global::shutdown_tracer_provider();
+    tracing_axiom::shutdown();
 
     Ok(())
 }

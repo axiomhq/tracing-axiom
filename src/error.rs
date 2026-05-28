@@ -1,12 +1,12 @@
-use opentelemetry::trace;
+use opentelemetry_otlp::ExporterBuildError;
 use tracing_subscriber::util::TryInitError;
 
 /// The error type for this crate.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    /// Failed to configure the tracer.
-    #[error("Failed to configure tracer: {0}")]
-    TraceError(#[from] trace::TraceError),
+    /// Failed to build the OTLP exporter.
+    #[error("Failed to build OTLP exporter: {0}")]
+    ExporterBuild(#[from] ExporterBuildError),
 
     /// Failed to initialize the tracing-subscriber registry.
     #[error("Failed to initialize registry: {0}")]

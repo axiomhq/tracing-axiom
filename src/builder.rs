@@ -1,14 +1,16 @@
 use crate::Error;
+use opentelemetry::trace::TracerProvider as _;
 use opentelemetry::{Key, KeyValue, Value};
-use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_otlp::{Protocol, SpanExporter, WithExportConfig, WithHttpConfig};
 use opentelemetry_sdk::{
-    trace::{Config as TraceConfig, Tracer},
     Resource,
+    trace::{SdkTracerProvider, Tracer},
 };
 use opentelemetry_semantic_conventions::resource::{
     SERVICE_NAME, TELEMETRY_SDK_LANGUAGE, TELEMETRY_SDK_NAME, TELEMETRY_SDK_VERSION,
 };
 use reqwest::Url;
+use std::sync::Mutex;
 use std::{
     collections::HashMap,
     env::{self, VarError},
@@ -19,6 +21,30 @@ use tracing_opentelemetry::OpenTelemetryLayer;
 use tracing_subscriber::registry::LookupSpan;
 
 const CLOUD_URL: &str = "https://api.axiom.co";
+
+// Process-wide reference to the most recently built provider, so callers can
+// shut it down at graceful exit via [`crate::shutdown`]. `opentelemetry` no
+// longer exposes a `global::shutdown_tracer_provider()` in 0.31+, so the
+// shutdown signal must reach the concrete provider directly.
+static PROVIDER: Mutex<Option<SdkTracerProvider>> = Mutex::new(None);
+
+/// Flush the OTLP exporter on the most recently built provider, if any.
+/// Returns `false` if no provider has been built (e.g. tests, or a binary
+/// that calls `tracing_axiom::shutdown()` before `build()` runs).
+///
+/// # Panics
+/// Panics if the internal provider mutex has been poisoned by a previous
+/// panic while holding the lock — should never happen in practice since
+/// the lock is only held briefly during `build()` and `shutdown()`.
+pub fn shutdown() -> bool {
+    let provider = PROVIDER.lock().expect("PROVIDER mutex poisoned").take();
+    if let Some(p) = provider {
+        let _ = p.shutdown();
+        true
+    } else {
+        false
+    }
+}
 
 /// Builder for creating a tracing tracer, a layer or a subscriber that sends traces to
 /// Axiom via the `OpenTelemetry` protocol. The API token is read from the `AXIOM_TOKEN`
@@ -32,7 +58,6 @@ pub struct Builder {
     token: Option<String>,
     url: Option<Url>,
     tags: Vec<KeyValue>,
-    trace_config: Option<TraceConfig>,
     service_name: Option<String>,
     timeout: Option<Duration>,
 }
@@ -87,15 +112,8 @@ impl Builder {
         Ok(self)
     }
 
-    /// Set the trace config.
-    #[must_use]
-    pub fn with_trace_config(mut self, trace_config: impl Into<TraceConfig>) -> Self {
-        self.trace_config = Some(trace_config.into());
-        self
-    }
-
     /// Set the service name. It will be set as a resource attribute with the
-    /// name `service_name`.
+    /// name `service.name`.
     #[must_use]
     pub fn with_service_name(mut self, service_name: impl Into<String>) -> Self {
         self.service_name = Some(service_name.into());
@@ -156,6 +174,9 @@ impl Builder {
 
     /// Create a layer which sends traces to Axiom that can be added to the tracing layers.
     ///
+    /// The provider backing the layer is also registered globally and stashed
+    /// for later shutdown via [`crate::shutdown`].
+    ///
     /// # Errors
     ///
     /// Returns an error if any of the settings are not valid
@@ -173,7 +194,7 @@ impl Builder {
             .url
             .unwrap_or_else(|| CLOUD_URL.to_string().parse().expect("this is a valid URL"));
 
-        let mut headers = HashMap::with_capacity(2);
+        let mut headers = HashMap::with_capacity(3);
         headers.insert("Authorization".to_string(), format!("Bearer {token}"));
         headers.insert("X-Axiom-Dataset".to_string(), dataset_name);
         headers.insert(
@@ -189,26 +210,50 @@ impl Builder {
         ]);
 
         if let Some(service_name) = self.service_name {
-            // TODO: Is there a way to get the name of the bin crate using this?
             tags.push(KeyValue::new(SERVICE_NAME, service_name));
         }
 
-        let trace_config = self
-            .trace_config
-            .unwrap_or_default()
-            .with_resource(Resource::new(tags));
+        let resource = Resource::builder_empty().with_attributes(tags).build();
 
-        let pipeline = opentelemetry_otlp::new_exporter()
-            .http()
-            .with_http_client(reqwest::Client::new())
-            .with_endpoint(url)
+        // opentelemetry_sdk 0.31's `BatchSpanProcessor` runs on a dedicated OS
+        // thread; per its own docs that thread only supports the OTLP
+        // `reqwest-blocking-client` or `grpc-tonic` exporters. The async
+        // `reqwest::Client` here would panic with "there is no reactor running"
+        // on every batch flush.
+        // opentelemetry-otlp 0.31's HTTP exporter uses `with_endpoint` as the
+        // full per-signal URL, used verbatim — unlike older versions (and the
+        // `OTEL_EXPORTER_OTLP_ENDPOINT` env var) which append the `/v1/traces`
+        // signal path to a base URL. So we append it ourselves; otherwise spans
+        // POST to the bare root and Axiom returns 404.
+        let endpoint = format!("{}/v1/traces", url.to_string().trim_end_matches('/'));
+
+        let exporter = SpanExporter::builder()
+            .with_http()
+            .with_http_client(reqwest::blocking::Client::new())
+            .with_endpoint(endpoint)
+            .with_protocol(Protocol::HttpBinary)
             .with_headers(headers)
-            .with_timeout(self.timeout.unwrap_or(Duration::from_secs(3)));
-        let tracer = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(pipeline)
-            .with_trace_config(trace_config)
-            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
+            .with_timeout(self.timeout.unwrap_or(Duration::from_secs(3)))
+            .build()?;
+
+        let provider = SdkTracerProvider::builder()
+            .with_batch_exporter(exporter)
+            .with_resource(resource)
+            .build();
+
+        let tracer = provider.tracer(env!("CARGO_PKG_NAME"));
+
+        // Stash the provider so callers can flush via `crate::shutdown()`,
+        // and register it globally so other OTel-using code in the process
+        // picks up the same provider. Replacing an earlier provider (e.g.
+        // when a test rebuilds) flushes the old one first.
+        if let Ok(mut slot) = PROVIDER.lock() {
+            if let Some(old) = slot.replace(provider.clone()) {
+                let _ = old.shutdown();
+            }
+        }
+        opentelemetry::global::set_tracer_provider(provider);
+
         Ok(tracer)
     }
 }
@@ -225,7 +270,9 @@ mod tests {
         for ref key in std::env::vars().map(|(key, _)| key) {
             if key.starts_with("AXIOM") {
                 saved_env.insert(key.clone(), std::env::var(key)?);
-                std::env::remove_var(key);
+                unsafe {
+                    std::env::remove_var(key);
+                }
             }
         }
 
@@ -234,7 +281,9 @@ mod tests {
 
     fn restore_axiom_env(saved_env: HashMap<String, String>) {
         for (key, value) in saved_env {
-            std::env::set_var(key, value);
+            unsafe {
+                std::env::set_var(key, value);
+            }
         }
     }
 
@@ -278,11 +327,15 @@ mod tests {
         let err = Builder::default().tracer();
         matches!(err, Err(Error::EnvVarMissing("AXIOM_TOKEN")));
 
-        std::env::set_var("AXIOM_TOKEN", "xaat-snot");
+        unsafe {
+            std::env::set_var("AXIOM_TOKEN", "xaat-snot");
+        }
         let err = Builder::default().tracer();
         matches!(err, Err(Error::EnvVarMissing("AXIOM_DATASET")));
 
-        std::env::set_var("AXIOM_DATASET", "test");
+        unsafe {
+            std::env::set_var("AXIOM_DATASET", "test");
+        }
         let ok = Builder::default().with_env()?.tracer();
         assert!(ok.is_ok());
 
@@ -348,7 +401,9 @@ mod tests {
         // gets confused with the global subscriber.
 
         let env_backup = env::var("AXIOM_TOKEN");
-        env::set_var("AXIOM_TOKEN", "xaat-1234567890");
+        unsafe {
+            env::set_var("AXIOM_TOKEN", "xaat-1234567890");
+        }
 
         let result = Builder::default()
             .with_dataset("test")?
@@ -356,7 +411,9 @@ mod tests {
             .build::<Registry>();
 
         if let Ok(token) = env_backup {
-            env::set_var("AXIOM_TOKEN", token);
+            unsafe {
+                env::set_var("AXIOM_TOKEN", token);
+            }
         }
 
         assert!(result.is_ok(), "{:?}", result.err());
