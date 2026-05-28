@@ -220,10 +220,17 @@ impl Builder {
         // `reqwest-blocking-client` or `grpc-tonic` exporters. The async
         // `reqwest::Client` here would panic with "there is no reactor running"
         // on every batch flush.
+        // opentelemetry-otlp 0.31's HTTP exporter uses `with_endpoint` as the
+        // full per-signal URL, used verbatim — unlike older versions (and the
+        // `OTEL_EXPORTER_OTLP_ENDPOINT` env var) which append the `/v1/traces`
+        // signal path to a base URL. So we append it ourselves; otherwise spans
+        // POST to the bare root and Axiom returns 404.
+        let endpoint = format!("{}/v1/traces", url.to_string().trim_end_matches('/'));
+
         let exporter = SpanExporter::builder()
             .with_http()
             .with_http_client(reqwest::blocking::Client::new())
-            .with_endpoint(url.to_string())
+            .with_endpoint(endpoint)
             .with_protocol(Protocol::HttpBinary)
             .with_headers(headers)
             .with_timeout(self.timeout.unwrap_or(Duration::from_secs(3)))
